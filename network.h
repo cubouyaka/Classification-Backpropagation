@@ -1,12 +1,14 @@
 #include <fstream>
 #include <iostream>
 #include "neuron.h"
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 class Network {
 
   Neuron ** network;
-  int *** weight;
+  double *** weight;
   int nb_layers;
   int nb_neurons; //the number of neurons per layer
 

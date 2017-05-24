@@ -3,6 +3,9 @@
 
 Network::Network(int _nb_layers, int _nb_neurons) {
 
+  srand (static_cast <unsigned> (time(0)));
+  double a = 0.3;
+
   nb_layers = _nb_layers;
   nb_neurons = _nb_neurons;
   network = new Neuron*[nb_layers];
@@ -11,13 +14,13 @@ Network::Network(int _nb_layers, int _nb_neurons) {
     for(int y = 0; y < nb_neurons; y++)
       network[x][y].state = 0;
   }
-  weight = new int**[nb_layers];
+  weight = new double**[nb_layers];
   for(int i = 0; i < nb_layers; i++){
-    weight[i] = new int*[nb_neurons];
+    weight[i] = new double*[nb_neurons];
     for(int j = 0; j < nb_neurons; j++){
-      weight[i][j] = new int[nb_neurons];
+      weight[i][j] = new double[nb_neurons];
       for(int l = 0; l < nb_neurons; l++)
-	weight[i][j][l] = 0;
+	weight[i][j][l] = -a + ((double)rand() / RAND_MAX)*(2*a);
     }
   }
 }
