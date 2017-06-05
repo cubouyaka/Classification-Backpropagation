@@ -4,6 +4,8 @@
 Network::Network() {
   nb_layers = 0;
   nb_neurons = 0;
+  learning_coeff = 1;
+  slope = 1;
 }
 
 Network::~Network(){
@@ -47,6 +49,7 @@ bool Network::exist(char * name){
 
 void Network::askInput(){
   //ASK FILE
+  int nb_input = 306;
   char f[100];
   ifstream file;
   int expected_class = 0;
@@ -63,13 +66,18 @@ void Network::askInput(){
   cout << "Number of Neurons : " << nb_neurons<<endl<<endl;
 
   this->initialize();
-
-  loadInput(&file);
-  this->training(expected_class);
-
-  expected_class ++;
+  while(nb_input > 0){
+    loadInput(&file);
+    this->training(expected_class);
+    expected_class ++;
+    nb_input --;
+  }
 
   file.close();
+  bool b = true;
+  while(b)
+    b=askUser();
+
   /* ASK MANUAL
      for(int i = 0; i < nb_layers; i++){
      cout << "State value of neuron n-"<<i<<" :\n";
@@ -79,17 +87,53 @@ void Network::askInput(){
   */
 }
 
+bool Network::askUser(){
+  double tmp;
+  char answer[10];// = "no";
+  for(int i = 0; i < nb_neurons; i++){
+    cout << "Enter "<<i<<"-th value of the vector\n";
+    cin >> tmp;
+    network[0][i].state = tmp;
+    network[0][i].output = tmp;
+  }
+  cout << "Which class do you expect ?\n";
+  cin >> tmp;
+  this->training(tmp);
+  cout << "Belongs to the class number "<<indexClass()<<endl;
+  cout << "Do you want to continue ?\n";
+  cin >> answer;
+  if(!strcmp(answer,"yes") || !strcmp(answer,"y"))
+    return true;
+  else
+    return false;
+}
+
 void Network::loadInput(ifstream * file){
   int c = 0;
   int value = 0;
-  char delimiter;
-  cout <<right<<std::setw(5)<<"\033[0;32m"<<"--INPUT VALUES--\n";
-  while((*file >> value >> delimiter) && (delimiter == ',')){
+  char delimiter = ',';
+  //cout <<right<<std::setw(5)<<"\033[0;32m"<<"--INPUT VALUES--\n";
+  cout <<"--INPUT VALUES--\n";
+  /*
+    while((delimiter == ',')){// && (*file >> value >> delimiter)){
+    (*file >> value >> delimiter);
+    cout << "delim " << delimiter<<" - value " <<'|'<< value <<'|'<< endl;
     network[0][c].state = value;
-    cout << network[0][c].state<<" - ";
+    cout << network[0][c].state << " - ";
     c++;
   }
+  */
+  while(c < nb_neurons-1){
+    (*file >> value);
+    network[0][c].state = value;
+    network[0][c].output = value;
+    (*file >> delimiter);
+    cout << network[0][c].state << " - ";
+    c++;
+  }
+  (*file >> value);  
   network[0][c].state = value;
+  network[0][c].output = value;
   cout << network[0][c].state << endl;
 }
 
@@ -104,10 +148,67 @@ double Network::weightInputSum(int l, int i){
 
 //calcul the output signal of i-th neuron in the l-th layer
 double Network::outputSignal(int l, int i){
-  double slope = 1;
   return (1 / (1+exp(-(weightInputSum(l,i) - network[l][i].threshold)/slope)));
 }
 
-void Network::training(int e_c){
-  //TODO
+void Network::training(int e_class){
+  int i,j,l;
+  for(i = 1; i < nb_layers; i++){
+    for(j = 0; j < nb_neurons; j++){
+      //cout << "i "<<i<<" j "<<j<<endl;
+      network[i][j].output = outputSignal(i,j);
+      //cout << network[i][j].output << endl;
+    }
+  }
+  /*
+  cout << network[nb_layers-1][0].output << " - ";
+  cout << network[nb_layers-1][1].output << " - ";
+  cout << network[nb_layers-1][2].output << " - ";
+  cout << network[nb_layers-1][3].output << " - ";
+  cout << indexClass()<<endl;
+  */
+
+  if(indexClass() != e_class){
+    for(l = nb_layers-1; l > 0; l--){
+      for(i = 0; i < nb_neurons; i++){
+	for(j = 0; j < nb_neurons; j++){
+	  //cout << "avant : l "<<l<<" i "<<i<<" j "<<j<<endl;
+	  weight[l][j][i] += learning_coeff*network[l-1][i].output*d(l,j,e_class);
+	}
+      }
+    }
+  }
+}
+
+double Network::d(int i_layer, int i, int e_class){
+  double result = 0;
+  if(i_layer == nb_layers-1){ //for element in output layer
+    if(i == e_class)
+      result = (1-network[i_layer][i].output)*f_prime(i_layer,i);
+    else
+      result = (-network[i_layer][i].output)*f_prime(i_layer,i);
+  }else{ //for element in hidden layer
+    double sum = 0;
+    for(int j = 0; j < nb_neurons ; j++)
+      sum += d(i_layer+1,j,e_class)*weight[i_layer+1][i][j];
+    result = (1/slope)*network[i_layer][i].output*(1-network[i_layer][i].output)*sum;
+  }
+  return result;
+}
+
+double Network::f_prime(int i_layer, int i){
+  double k = 1/slope;
+  return k*network[i_layer][i].output*(1-network[i_layer][i].output);
+}
+
+int Network::indexClass(){
+  int j = 0;
+  double tmp = 0;
+  for(int i = 0; i < nb_neurons; i++){
+    if(network[nb_layers-1][i].output > tmp){
+      tmp = network[nb_layers-1][i].output;
+      j = i;
+    }
+  }
+  return j;
 }

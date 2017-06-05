@@ -2,8 +2,8 @@ class Neuron {
 
  public:
 
-  int state;
-  int output;
+  double state;
+  double output;
   int threshold;
 
   //---------CONSTRUCTORS----------
@@ -13,7 +13,7 @@ class Neuron {
     threshold = 0;
   } //default constructor
   
-  Neuron(int _state,int _output, int _threshold) {
+  Neuron(double _state,double _output, int _threshold) {
     state = _state;
     output = _output;
     threshold = _threshold;
